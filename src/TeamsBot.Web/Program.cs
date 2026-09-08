@@ -1,14 +1,15 @@
 using TeamsBot.Application; using TeamsBot.Domain; using TeamsBot.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 if (builder.Configuration.GetValue("DemoMode", true)) builder.Services.AddSingleton<ITranscriptSource, DemoTranscriptSource>(); else { builder.Services.Configure<GraphTranscriptOptions>(builder.Configuration.GetSection("Graph")); builder.Services.AddHttpClient<ITranscriptSource, GraphTranscriptSource>(); }
 builder.Services.AddSingleton<IMeetingPresence, ServiceHostedCallingBot>();
 if (builder.Configuration.GetValue("Ai:Provider", "ollama") == "ollama") { builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ai:Ollama")); builder.Services.AddHttpClient<IInsightExtractor, OllamaInsightExtractor>(); } else builder.Services.AddSingleton<IInsightExtractor, GroundedInsightExtractor>();
 builder.Services.AddSingleton<ITaskPublisher, NoopTaskPublisher>(); builder.Services.AddSingleton<MeetingCompanionService>();
 var app = builder.Build();
+app.UseCors();
 app.UseDefaultFiles(); app.UseStaticFiles();
 
-app.MapGet("/", () => "Hello World!");
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapPost("/api/meetings/{meetingId}/join", async (string meetingId, JoinRequest r, MeetingCompanionService s, CancellationToken ct) => { if (!r.Confirmed) return Results.BadRequest(new { error = "Explicit confirmation is required." }); var m = new MeetingRecord(r.TenantId, meetingId, r.Kind, r.UserId, r.JoinUrl, MeetingState.Planned); return Results.Ok(new { status = await s.JoinAsync(m, ct) }); });
