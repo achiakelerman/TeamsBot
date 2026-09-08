@@ -30,7 +30,20 @@ public sealed class DemoTranscriptSource : ITranscriptSource
         return Task.FromResult<TranscriptArtifact?>(new TranscriptArtifact("demo-transcript", meeting.MeetingId, utterances, true, "demo-hash"));
     }
 }
-public sealed class ServiceHostedCallingBot(ILogger<ServiceHostedCallingBot> logger) : IMeetingPresence { public Task<string> JoinAsync(MeetingRecord meeting, CancellationToken ct) { logger.LogInformation("Visible join requested for {MeetingId}; Graph service-hosted media adapter pending", meeting.MeetingId); return Task.FromResult("presence-requested"); } }
+public sealed class ServiceHostedCallingBot(ILogger<ServiceHostedCallingBot> logger) : IMeetingPresence
+{
+    public Task<string> JoinAsync(MeetingRecord meeting, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(meeting.JoinUrl)) return Task.FromResult("join-url-required");
+        if (!Uri.TryCreate(meeting.JoinUrl, UriKind.Absolute, out var uri) || uri.Host is not ("teams.microsoft.com" or "teams.live.com" or "teams.cloud.microsoft")) return Task.FromResult("invalid-teams-url");
+        var script = Path.Combine(Directory.GetCurrentDirectory(), "tools", "teams-browser", "join.mjs");
+        if (!File.Exists(script)) return Task.FromResult("worker-not-found");
+        var psi = new ProcessStartInfo("node") { WorkingDirectory = Directory.GetCurrentDirectory(), UseShellExecute = false, CreateNoWindow = false };
+        psi.ArgumentList.Add(script); psi.ArgumentList.Add(meeting.JoinUrl); psi.ArgumentList.Add("Meeting Companion");
+        try { Process.Start(psi); logger.LogInformation("Opened Teams browser worker for {MeetingId}", meeting.MeetingId); return Task.FromResult("browser-opened"); }
+        catch (Exception ex) { logger.LogError(ex, "Could not start Teams browser worker"); return Task.FromResult("worker-start-failed"); }
+    }
+}
 public sealed class GroundedInsightExtractor : IInsightExtractor
 {
     public Task<InsightResult> ExtractAsync(TranscriptArtifact t, CancellationToken ct)
