@@ -9,4 +9,5 @@ appsettings.Local.json
 output/
 node_modules/
 playwright-profile/
+TeamsMeetingCompanion.zip
 .env

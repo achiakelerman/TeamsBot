@@ -1,0 +1,1 @@
+Replace `YOUR_PUBLIC_HOST` in manifest.json with the HTTPS host that exposes TeamsBot.Web (for local development, an ngrok hostname), then zip manifest.json, color.png and outline.png and upload the ZIP in Teams > Manage your apps > Upload an app.

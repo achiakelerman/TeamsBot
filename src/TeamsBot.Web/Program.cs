@@ -6,6 +6,7 @@ builder.Services.AddSingleton<IMeetingPresence, ServiceHostedCallingBot>();
 if (builder.Configuration.GetValue("Ai:Provider", "ollama") == "ollama") { builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ai:Ollama")); builder.Services.AddHttpClient<IInsightExtractor, OllamaInsightExtractor>(); } else builder.Services.AddSingleton<IInsightExtractor, GroundedInsightExtractor>();
 builder.Services.AddSingleton<ITaskPublisher, NoopTaskPublisher>(); builder.Services.AddSingleton<MeetingCompanionService>();
 var app = builder.Build();
+app.UseDefaultFiles(); app.UseStaticFiles();
 
 app.MapGet("/", () => "Hello World!");
 
