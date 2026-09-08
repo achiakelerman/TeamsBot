@@ -7,6 +7,12 @@ npm install
 npm run join -- "https://teams.microsoft.com/l/meetup-join/..." "Meeting Companion"
 ```
 
+From the repository root, the guided launcher is easier for first use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\start-teams-companion.ps1
+```
+
 The script uses an installed Chrome by default. Set `TEAMS_BROWSER_PATH` to an Edge or Chrome executable when needed.
 
 The meeting host may need to admit the participant. UI selectors can change as Teams evolves; this worker is a local POC, not the official Graph calling bot.
