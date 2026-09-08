@@ -7,5 +7,6 @@ obj/
 appsettings.Local.json
 *.secrets.json
 output/
+node_modules/
 playwright-profile/
 .env

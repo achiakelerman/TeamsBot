@@ -1,0 +1,7 @@
+{
+  "name": "teams-meeting-companion-browser",
+  "private": true,
+  "type": "module",
+  "scripts": { "join": "node join.mjs" },
+  "dependencies": { "playwright": "^1.55.0" }
+}
