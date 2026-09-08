@@ -36,9 +36,9 @@ public sealed class ServiceHostedCallingBot(ILogger<ServiceHostedCallingBot> log
     {
         if (string.IsNullOrWhiteSpace(meeting.JoinUrl)) return Task.FromResult("join-url-required");
         if (!Uri.TryCreate(meeting.JoinUrl, UriKind.Absolute, out var uri) || uri.Host is not ("teams.microsoft.com" or "teams.live.com" or "teams.cloud.microsoft")) return Task.FromResult("invalid-teams-url");
-        var script = Path.Combine(Directory.GetCurrentDirectory(), "tools", "teams-browser", "join.mjs");
+        var repoRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", ".."));\n        var script = Path.Combine(repoRoot, "tools", "teams-browser", "join.mjs");
         if (!File.Exists(script)) return Task.FromResult("worker-not-found");
-        var psi = new ProcessStartInfo("node") { WorkingDirectory = Directory.GetCurrentDirectory(), UseShellExecute = false, CreateNoWindow = false };
+        var psi = new ProcessStartInfo("node") { WorkingDirectory = repoRoot, UseShellExecute = false, CreateNoWindow = false };
         psi.ArgumentList.Add(script); psi.ArgumentList.Add(meeting.JoinUrl); psi.ArgumentList.Add("Meeting Companion");
         try { Process.Start(psi); logger.LogInformation("Opened Teams browser worker for {MeetingId}", meeting.MeetingId); return Task.FromResult("browser-opened"); }
         catch (Exception ex) { logger.LogError(ex, "Could not start Teams browser worker"); return Task.FromResult("worker-start-failed"); }
