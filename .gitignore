@@ -10,4 +10,8 @@ output/
 node_modules/
 playwright-profile/
 TeamsMeetingCompanion.zip
+ngrok.local.yml
 .env
+
+.vercel
+.env*

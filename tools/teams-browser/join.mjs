@@ -10,6 +10,7 @@ if (!meetingUrl) {
 
 await mkdir('output/playwright', { recursive: true });
 const output = `output/playwright/${new Date().toISOString().replaceAll(':', '-')}.jsonl`;
+await appendFile(output, JSON.stringify({ event: 'worker.started', timestamp: new Date().toISOString() }) + '\n');
 const executablePath = process.env.TEAMS_BROWSER_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const context = await chromium.launchPersistentContext('playwright-profile', { headless: false, executablePath, permissions: [] });
 const page = context.pages()[0] ?? await context.newPage();
@@ -26,23 +27,20 @@ if (await nameInput.isVisible({ timeout: 30000 }).catch(() => false)) {
 
 console.log('Browser opened. Complete Microsoft sign-in or lobby admission manually if requested.');
 console.log(`Transcript output: ${output}`);
-const captionRoot = page.locator('[data-tid="closed-caption-renderer-wrapper"]');
-if (await captionRoot.isVisible({ timeout: 120000 }).catch(() => false)) {
-  await page.exposeFunction('emitCaption', async (caption) => {
-    await appendFile(output, JSON.stringify(caption) + '\n');
-    console.log(`${caption.participant}: ${caption.text}`);
-  });
-  await page.evaluate(() => {
-    const root = document.querySelector('[data-tid="closed-caption-renderer-wrapper"]');
-    if (!root) return;
+await page.exposeFunction('emitCaption', async (caption) => {
+  await appendFile(output, JSON.stringify(caption) + '\n');
+  console.log(`${caption.participant}: ${caption.text}`);
+});
+await page.evaluate(() => {
+    const root = document.body;
     const observer = new MutationObserver(() => {
-      for (const node of root.querySelectorAll('.fui-ChatMessageCompact')) {
+      for (const node of root.querySelectorAll('.fui-ChatMessageCompact, [data-tid="closed-caption-text"]')) {
         const author = node.querySelector('[data-tid="author"]')?.textContent?.trim() ?? 'Unknown';
         const text = node.querySelector('[data-tid="closed-caption-text"]')?.textContent?.trim() ?? '';
-        if (text) window.emitCaption({ participant: author, text, timestamp: new Date().toISOString() });
+        const direct = node.getAttribute('data-tid') === 'closed-caption-text' ? node.textContent?.trim() : text;
+        if (direct) window.emitCaption({ participant: author, text: direct, timestamp: new Date().toISOString() });
       }
     });
     observer.observe(root, { childList: true, subtree: true });
-  });
-}
+});
 await new Promise(() => {});
