@@ -1,4 +1,4 @@
-using TeamsBot.Application; using TeamsBot.Domain; using Microsoft.Extensions.Logging; using Azure.Identity; using System.Net.Http.Headers; using System.Net.Http.Json; using System.Text.Json;
+using System.Diagnostics; using TeamsBot.Application; using TeamsBot.Domain; using Microsoft.Extensions.Logging; using Azure.Identity; using System.Net.Http.Headers; using System.Net.Http.Json; using System.Text.Json;
 namespace TeamsBot.Infrastructure;
 public sealed class GraphTranscriptOptions { public string TenantId { get; set; } = ""; public string ClientId { get; set; } = ""; public string ClientSecret { get; set; } = ""; public string GraphBaseUrl { get; set; } = "https://graph.microsoft.com/v1.0"; }
 public sealed class GraphTranscriptSource(HttpClient http, Microsoft.Extensions.Options.IOptions<GraphTranscriptOptions> options, ILogger<GraphTranscriptSource> logger) : ITranscriptSource
