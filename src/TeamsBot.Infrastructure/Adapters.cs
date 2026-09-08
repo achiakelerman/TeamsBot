@@ -1,5 +1,14 @@
 using System.Diagnostics; using TeamsBot.Application; using TeamsBot.Domain; using Microsoft.Extensions.Logging; using Azure.Identity; using System.Net.Http.Headers; using System.Net.Http.Json; using System.Text.Json;
 namespace TeamsBot.Infrastructure;
+internal static class LocalPaths
+{
+    public static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "tools"))) dir = dir.Parent;
+        return dir?.FullName ?? Directory.GetCurrentDirectory();
+    }
+}
 public sealed class GraphTranscriptOptions { public string TenantId { get; set; } = ""; public string ClientId { get; set; } = ""; public string ClientSecret { get; set; } = ""; public string GraphBaseUrl { get; set; } = "https://graph.microsoft.com/v1.0"; }
 public sealed class GraphTranscriptSource(HttpClient http, Microsoft.Extensions.Options.IOptions<GraphTranscriptOptions> options, ILogger<GraphTranscriptSource> logger) : ITranscriptSource
 {
@@ -21,7 +30,7 @@ public sealed class PlaywrightTranscriptSource : ITranscriptSource
 {
     public Task<TranscriptArtifact?> GetAsync(MeetingRecord meeting, CancellationToken ct)
     {
-        var root = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", ".."));
+        var root = LocalPaths.RepoRoot();
         var file = Directory.Exists(Path.Combine(root, "output", "playwright"))
             ? Directory.GetFiles(Path.Combine(root, "output", "playwright"), "*.jsonl").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() : null;
         if (file is null) return Task.FromResult<TranscriptArtifact?>(null);
@@ -85,7 +94,7 @@ public sealed class ServiceHostedCallingBot(ILogger<ServiceHostedCallingBot> log
     {
         if (string.IsNullOrWhiteSpace(meeting.JoinUrl)) return Task.FromResult("join-url-required");
         if (!Uri.TryCreate(meeting.JoinUrl, UriKind.Absolute, out var uri) || uri.Host is not ("teams.microsoft.com" or "teams.live.com" or "teams.cloud.microsoft")) return Task.FromResult("invalid-teams-url");
-        var repoRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", ".."));
+        var repoRoot = LocalPaths.RepoRoot();
         var script = Path.Combine(repoRoot, "tools", "teams-browser", "join.mjs");
         if (!File.Exists(script)) return Task.FromResult("worker-not-found");
         var psi = new ProcessStartInfo("node") { WorkingDirectory = repoRoot, UseShellExecute = false, CreateNoWindow = false };
