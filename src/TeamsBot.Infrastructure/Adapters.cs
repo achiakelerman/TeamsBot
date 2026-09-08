@@ -59,6 +59,7 @@ public sealed class DemoTranscriptSource : ITranscriptSource
 }
 public sealed class ServiceHostedCallingBot(ILogger<ServiceHostedCallingBot> logger) : IMeetingPresence
 {
+    private static Process? audioProcess;
     public Task<string> JoinAsync(MeetingRecord meeting, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(meeting.JoinUrl)) return Task.FromResult("join-url-required");
@@ -68,7 +69,19 @@ public sealed class ServiceHostedCallingBot(ILogger<ServiceHostedCallingBot> log
         if (!File.Exists(script)) return Task.FromResult("worker-not-found");
         var psi = new ProcessStartInfo("node") { WorkingDirectory = repoRoot, UseShellExecute = false, CreateNoWindow = false };
         psi.ArgumentList.Add(script); psi.ArgumentList.Add(meeting.JoinUrl); psi.ArgumentList.Add("Meeting Companion");
-        try { Process.Start(psi); logger.LogInformation("Opened Teams browser worker for {MeetingId}", meeting.MeetingId); return Task.FromResult("browser-opened"); }
+        try
+        {
+            if (audioProcess is null || audioProcess.HasExited)
+            {
+                var audio = new ProcessStartInfo("dotnet") { WorkingDirectory = repoRoot, UseShellExecute = false, CreateNoWindow = false };
+                audio.ArgumentList.Add("run"); audio.ArgumentList.Add("--project"); audio.ArgumentList.Add(Path.Combine(repoRoot, "tools", "TeamsBot.AudioCapture")); audio.ArgumentList.Add("--no-launch-profile");
+                audioProcess = Process.Start(audio);
+                logger.LogInformation("Started system audio capture for {MeetingId}", meeting.MeetingId);
+            }
+            Process.Start(psi);
+            logger.LogInformation("Opened Teams browser worker for {MeetingId}", meeting.MeetingId);
+            return Task.FromResult("browser-opened-audio-capture-started");
+        }
         catch (Exception ex) { logger.LogError(ex, "Could not start Teams browser worker"); return Task.FromResult("worker-start-failed"); }
     }
 }
