@@ -39,6 +39,27 @@ public sealed class PlaywrightTranscriptSource : ITranscriptSource
             }
             catch (JsonException) { }
         }
+        if (rows.Count == 0)
+        {
+            var audioDir = Path.Combine(root, "output", "audio");
+            var wav = Directory.Exists(audioDir) ? Directory.GetFiles(audioDir, "*.wav").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() : null;
+            if (wav is not null)
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo("python") { WorkingDirectory = root, UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true };
+                    psi.ArgumentList.Add(Path.Combine(root, "tools", "transcribe_audio.py")); psi.ArgumentList.Add(wav);
+                    using var process = Process.Start(psi); if (process is not null)
+                    {
+                        var output = process.StandardOutput.ReadToEnd(); process.WaitForExit();
+                        using var json = JsonDocument.Parse(output);
+                        foreach (var item in json.RootElement.GetProperty("segments").EnumerateArray())
+                            rows.Add(new Utterance(TimeSpan.FromSeconds(item.GetProperty("start").GetDouble()), TimeSpan.FromSeconds(item.GetProperty("end").GetDouble()), null, null, item.GetProperty("text").GetString() ?? ""));
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
         if (rows.Count == 0) return Task.FromResult<TranscriptArtifact?>(null);
         var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(string.Join("\n", rows.Select(x => x.Text)))));
         return Task.FromResult<TranscriptArtifact?>(new TranscriptArtifact(Path.GetFileNameWithoutExtension(file), meeting.MeetingId, rows, rows.Any(x => x.SpeakerDisplayName is not null), hash));
