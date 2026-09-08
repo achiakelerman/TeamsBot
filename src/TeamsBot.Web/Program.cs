@@ -2,7 +2,7 @@ using TeamsBot.Application; using TeamsBot.Domain; using TeamsBot.Infrastructure
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
-if (builder.Configuration.GetValue("DemoMode", true)) builder.Services.AddSingleton<ITranscriptSource, DemoTranscriptSource>(); else { builder.Services.Configure<GraphTranscriptOptions>(builder.Configuration.GetSection("Graph")); builder.Services.AddHttpClient<ITranscriptSource, GraphTranscriptSource>(); }
+if (builder.Configuration.GetValue("DemoMode", false)) builder.Services.AddSingleton<ITranscriptSource, DemoTranscriptSource>(); else if (builder.Configuration.GetValue("Graph:Enabled", false)) { builder.Services.Configure<GraphTranscriptOptions>(builder.Configuration.GetSection("Graph")); builder.Services.AddHttpClient<ITranscriptSource, GraphTranscriptSource>(); } else builder.Services.AddSingleton<ITranscriptSource, PlaywrightTranscriptSource>();
 builder.Services.AddSingleton<IMeetingPresence, ServiceHostedCallingBot>();
 if (builder.Configuration.GetValue("Ai:Provider", "ollama") == "ollama") { builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ai:Ollama")); builder.Services.AddHttpClient<IInsightExtractor, OllamaInsightExtractor>(); } else builder.Services.AddSingleton<IInsightExtractor, GroundedInsightExtractor>();
 builder.Services.AddSingleton<ITaskPublisher, NoopTaskPublisher>(); builder.Services.AddSingleton<MeetingCompanionService>();

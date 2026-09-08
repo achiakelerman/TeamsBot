@@ -17,6 +17,33 @@ public sealed class GraphTranscriptSource(HttpClient http, Microsoft.Extensions.
         return new TranscriptArtifact(id, meeting.MeetingId, [utterance], false, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))));
     }
 }
+public sealed class PlaywrightTranscriptSource : ITranscriptSource
+{
+    public Task<TranscriptArtifact?> GetAsync(MeetingRecord meeting, CancellationToken ct)
+    {
+        var root = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", ".."));
+        var file = Directory.Exists(Path.Combine(root, "output", "playwright"))
+            ? Directory.GetFiles(Path.Combine(root, "output", "playwright"), "*.jsonl").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() : null;
+        if (file is null) return Task.FromResult<TranscriptArtifact?>(null);
+        var rows = new List<Utterance>();
+        foreach (var line in File.ReadLines(file))
+        {
+            try
+            {
+                using var json = JsonDocument.Parse(line);
+                if (!json.RootElement.TryGetProperty("text", out var textValue)) continue;
+                var text = textValue.GetString(); if (string.IsNullOrWhiteSpace(text)) continue;
+                var speaker = json.RootElement.TryGetProperty("participant", out var participant) ? participant.GetString() : null;
+                var stamp = json.RootElement.TryGetProperty("timestamp", out var ts) && DateTimeOffset.TryParse(ts.GetString(), out var when) ? when : DateTimeOffset.MinValue;
+                rows.Add(new Utterance(TimeSpan.Zero, TimeSpan.Zero, null, speaker, text));
+            }
+            catch (JsonException) { }
+        }
+        if (rows.Count == 0) return Task.FromResult<TranscriptArtifact?>(null);
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(string.Join("\n", rows.Select(x => x.Text)))));
+        return Task.FromResult<TranscriptArtifact?>(new TranscriptArtifact(Path.GetFileNameWithoutExtension(file), meeting.MeetingId, rows, rows.Any(x => x.SpeakerDisplayName is not null), hash));
+    }
+}
 public sealed class DemoTranscriptSource : ITranscriptSource
 {
     public Task<TranscriptArtifact?> GetAsync(MeetingRecord meeting, CancellationToken ct)
