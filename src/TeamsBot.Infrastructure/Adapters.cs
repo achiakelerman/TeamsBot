@@ -56,7 +56,8 @@ public sealed class PlaywrightTranscriptSource : ITranscriptSource
             {
                 try
                 {
-                    var psi = new ProcessStartInfo("python") { WorkingDirectory = root, UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true };
+                    var python = Environment.GetEnvironmentVariable("TEAMS_PYTHON") ?? "python";
+                    var psi = new ProcessStartInfo(python) { WorkingDirectory = root, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
                     psi.ArgumentList.Add(Path.Combine(root, "tools", "transcribe_audio.py")); psi.ArgumentList.Add(wav);
                     using var process = Process.Start(psi); if (process is not null)
                     {

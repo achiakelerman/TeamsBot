@@ -1,5 +1,6 @@
 import json, sys
 from faster_whisper import WhisperModel
+sys.stdout.reconfigure(encoding="utf-8")
 
 audio = sys.argv[1]
 model = WhisperModel("small", device="cpu", compute_type="int8")
