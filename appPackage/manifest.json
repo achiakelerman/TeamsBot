@@ -3,7 +3,6 @@
   "manifestVersion": "1.17",
   "version": "0.1.0",
   "id": "5f0f6a61-2b4b-4f0f-a8e5-7c4a0ef32df1",
-  "packageName": "com.achiakelerman.teamscompanion",
   "developer": { "name": "Local Meeting Companion", "websiteUrl": "https://YOUR_PUBLIC_HOST", "privacyUrl": "https://YOUR_PUBLIC_HOST/privacy", "termsOfUseUrl": "https://YOUR_PUBLIC_HOST/terms" },
   "name": { "short": "Meeting Companion", "full": "Teams Meeting Companion" },
   "description": { "short": "Local-first meeting companion", "full": "Launches a local meeting companion for a consenting Teams meeting and prepares grounded summaries." },
