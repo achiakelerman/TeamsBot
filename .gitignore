@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+appsettings.Local.json
+*.secrets.json
+output/
+playwright-profile/
+.env

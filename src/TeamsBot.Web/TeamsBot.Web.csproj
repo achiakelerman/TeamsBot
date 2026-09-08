@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\TeamsBot.Domain\TeamsBot.Domain.csproj" />
+    <ProjectReference Include="..\TeamsBot.Application\TeamsBot.Application.csproj" />
+    <ProjectReference Include="..\TeamsBot.Infrastructure\TeamsBot.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
